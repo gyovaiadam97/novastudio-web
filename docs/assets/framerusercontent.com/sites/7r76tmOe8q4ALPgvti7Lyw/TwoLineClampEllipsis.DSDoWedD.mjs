@@ -1,0 +1,2 @@
+import{t as e}from"./rolldown-runtime.Dh6celcD.mjs";import{c as t,o as n}from"./react.BlTKPf8d.mjs";function r(e){return n=>{let r={...n.style,display:`-webkit-box`,WebkitBoxOrient:`vertical`,overflow:`hidden`,WebkitLineClamp:2,textOverflow:`ellipsis`};return t(e,{...n,style:r})}}var i=e((()=>{n()}));export{r as n,i as t};
+//# sourceMappingURL=TwoLineClampEllipsis.DSDoWedD.mjs.map

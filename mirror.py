@@ -322,6 +322,37 @@ def main():
             )
             text = re.sub(r'<script data-mirror-nav>.*?</script>', "", text)
             text = text.replace("</head>", NAV_FIX + "</head>", 1)
+        # A CMS-betöltő ?range= lekérésekkel kér byte-tartományokat a
+        # .framercms fájlokból — statikus szerver (GitHub Pages is) a teljes
+        # fájlt adja vissza, amitől a hossz-ellenőrzés fatálisan elhasal
+        # (fehér képernyő pl. a munkáink-szűrőknél). Patch: teljes fájl
+        # letöltése + kliensoldali kivágás abszolút offsetekkel.
+        # (a feltétel a patch előtti ÉS utáni állapotra is illeszkedik,
+        # hogy ismételt futtatásnál is lefusson minden csere)
+        if f.suffix in {".mjs", ".js"} and (
+            "Unexpected response length" in text or ",d=0;for" in text
+            or re.search(r",[A-Za-z_$][\w$]*=0;for\(let [A-Za-z_$][\w$]* of ", text)
+        ):
+            V = r"[A-Za-z_$][\w$]*"
+            # 1) ne kérjen range-et a szervertől
+            text = re.sub(
+                rf"({V})\.searchParams\.set\(`range`,{V}\)", r"void 0", text
+            )
+            # 2) hossz-ellenőrzés törlése (teljes fájl jön, nem részlet)
+            text = re.sub(
+                r"if\(" + V + r"\.length!==" + V
+                + r"\)throw Error\(`Request failed: Unexpected response length`\);",
+                "",
+                text,
+            )
+            # 3) szekvenciális kivágás -> abszolút offsetű kivágás
+            text = re.sub(
+                rf",({V})=0;for\(let ({V}) of ({V})\)\{{let ({V})=\2\.to-\2\.from,"
+                rf"({V})=\1\+\4,({V})=({V})\.subarray\(\1,\5\);"
+                rf"({V})\.write\(\2\.from,\6\),\1=\5\}}",
+                r",\1=0;for(let \2 of \3){\8.write(\2.from,\7.subarray(\2.from,\2.to))}",
+                text,
+            )
         # new URL(x, "/assets/...") érvénytelen bázissal dobna -> origin elé
         if f.suffix in {".mjs", ".js", ".html"}:
             text = re.sub(
